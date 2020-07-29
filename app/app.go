@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -15,6 +16,7 @@ import (
 type App struct {
 	DB     *sql.DB
 	Router *mux.Router
+	lock   *sync.RWMutex
 }
 
 func (app *App) setMiddlewere() {
@@ -23,7 +25,6 @@ func (app *App) setMiddlewere() {
 
 func (app *App) setRoutes() {
 	app.Router.HandleFunc("/", app.handelRequest(handler.TestAPI))
-	app.Router.HandleFunc("/test", app.handelRequest(handler.HandlerTest))
 }
 
 func (app *App) Run() {
@@ -31,8 +32,9 @@ func (app *App) Run() {
 	testAuth := dbcontext.Auth{
 		Username: "postgres",
 		Passowrd: "root",
-		DbName:   "db_testing",
+		DbName:   "db_quizy",
 	}
+	app.lock = &sync.RWMutex{}
 	var err error
 	app.DB, err = testAuth.Connection()
 	if err != nil {
@@ -46,8 +48,9 @@ func (app *App) Run() {
 	}
 }
 
-func (app *App) handelRequest(handler func(w http.ResponseWriter, r *http.Request, db sql.DB)) http.HandlerFunc {
+func (app *App) handelRequest(handler func(w http.ResponseWriter, r *http.Request, db *sql.DB)) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		handler(w, r, *app.DB)
+		handler(w, r, app.DB)
 	}
 }
