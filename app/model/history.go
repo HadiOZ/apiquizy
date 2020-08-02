@@ -1,13 +1,16 @@
 package model
 
 type History struct {
-	IDHistory string
-	Quiz      Quiz
-	Item      HistoryItem
+	HistoryID string   `json:"historyID"`
+	Quiz      Quiz     `json:"quiz"`
+	QuizRefer string   `json:"quizref"`
+	Players   []Player `json:"players"`
 }
 
-type HistoryItem struct {
-	User  User
-	Score int
-	Point int
+type Player struct {
+	HistoryRefer string `json:"ref"`
+	User         User   `json:"user"`
+	UserRefer    uint   `json:"userref"`
+	Score        uint   `json:"score"`
+	Point        uint   `json:"point"`
 }

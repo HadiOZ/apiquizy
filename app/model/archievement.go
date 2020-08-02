@@ -1,8 +1,8 @@
 package model
 
 type Archievement struct {
-	IDArchieve string
-	Quiz       Quiz
-	Point      int
-	Rank       int
+	ArchID    string `json:"archivementID"`
+	QuizRefer string `json:"quizref"`
+	Point     uint   `json:"point"`
+	Rank      uint   `json:"rank"`
 }
