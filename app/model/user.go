@@ -7,16 +7,16 @@ import (
 )
 
 type User struct {
-	UserID         string         `json:"userID"`
-	Email          string         `json:"email"`
-	Password       string         `json:"password"`
-	Name           string         `json:"name"`
+	UserID         string         `json:"userID" gorm:"unique; not null"`
+	Email          string         `json:"email" gorm:"unique; not null"`
+	Password       string         `json:"password" gorm:"not null"`
+	Name           string         `json:"name" gorm:"not null"`
 	Gender         sql.NullString `json:"gender"`
 	Country        sql.NullString `json:"country"`
 	BirthDate      sql.NullString `json:"birthdate"`
 	Job            sql.NullString `json:"job"`
 	Institution    sql.NullString `json:"institution"`
-	Phone          sql.NullString `json:"phone"`
+	Phone          sql.NullString `json:"phone" gorm:"unique"`
 	ProfilePicture sql.NullString `json:"profile"`
 }
 
@@ -49,7 +49,6 @@ func (u *User) CheckUSer(db *sql.DB) (result User, err error) {
 //function clear
 func (u *User) EditProfile(db *sql.DB) (int64, error) {
 	query := fmt.Sprintf(`UPDATE public.users SET name= '%s', gender= '%s', country= '%s', job= '%s', phone= '%s', institution= '%s', birth_date= '%s' WHERE user_id= '%s'`, u.Name, u.Gender.String, u.Country.String, u.Job.String, u.Phone.String, u.Institution.String, u.BirthDate.String, u.UserID)
-	log.Println(query)
 	res, err := db.Exec(query)
 	if err != nil {
 		return 0, err

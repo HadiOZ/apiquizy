@@ -15,7 +15,7 @@ import (
 type App struct {
 	DB     *sql.DB
 	Router *mux.Router
-	Assets []map[string]string
+	Assets dbcontext.Assets
 	Port   string
 }
 
@@ -23,51 +23,27 @@ func (app *App) setMiddlewere() {
 	app.Router.Use(middleware.Loging)
 }
 
-func (app *App) SetAssetPath(key string, value string) {
-	switch key {
-	case "profile":
-		path := map[string]string{"profile": value}
-		app.Assets = append(app.Assets, path)
-	case "media":
-		path := map[string]string{"media": value}
-		app.Assets = append(app.Assets, path)
-	case "picture":
-		path := map[string]string{"picture": value}
-		app.Assets = append(app.Assets, path)
-	}
-}
-
 func (app *App) setRoutes() {
 	// 	app.Router.HandleFunc("/", app.handelRequest(handler.TestAPI))
 	app.Router.HandleFunc("/signup", app.handelRequest(handler.SignUpFunc))
 	app.Router.HandleFunc("/signin", app.handelRequest(handler.SignInFunc))
-	app.Router.HandleFunc("/uploadpp", app.handelRequest(handler.UploadProfilePictureFunc))
-	// 	app.Router.HandleFunc("/uploadqp", app.handelRequest(handler.UploadQuizPictureFunc))
-	// 	app.Router.HandleFunc("/uploadqm", app.handelRequest(handler.UploadQuestionMediaFunc))
+	app.Router.HandleFunc("/uploadpp", app.handelRequestUpload(handler.UploadProfilePictureFunc))
+	app.Router.HandleFunc("/uploadqp", app.handelRequestUpload(handler.UploadQuizPictureFunc))
+	app.Router.HandleFunc("/uploadqm", app.handelRequestUpload(handler.UploadQuestionMediaFunc))
 	app.Router.HandleFunc("/editprofile", app.handelRequest(handler.EditUserFunc))
 	app.Router.HandleFunc("/createquiz", app.handelRequest(handler.CreateQuizFunc))
-	// 	app.Router.HandleFunc("/editquiz", app.handelRequest(handler.EditQuizFunc))
-	// 	app.Router.HandleFunc("/editquestion", app.handelRequest(handler.EditQuestionFunc))
+	app.Router.HandleFunc("/editquiz", app.handelRequest(handler.EditQuizFunc))
+	app.Router.HandleFunc("/deletequiz", app.handelRequest(handler.DeleteQuiz))
+	app.Router.HandleFunc("/addquestion", app.handelRequest(handler.AddQuestion))
+	app.Router.HandleFunc("/editquestion", app.handelRequest(handler.EditQuestionFunc))
+	app.Router.HandleFunc("/deletequestion", app.handelRequest(handler.DeleteQuestion))
 	app.Router.HandleFunc("/user", app.handelRequest(handler.SelectUserProfileFunc))
-	// 	app.Router.HandleFunc("/quizs", app.handelRequest(handler.SelectQuizByAuthorFunc))
-	// 	app.Router.HandleFunc("/quiz", app.handelRequest(handler.SelectQuizByIDFunc))
+	app.Router.HandleFunc("/quizdetail", app.handelRequest(handler.SelectQuizDetailFunc))
+	app.Router.HandleFunc("/quiz", app.handelRequest(handler.SelectQuizFunc))
 }
 
 func (app *App) Run() {
 	app.Router = mux.NewRouter()
-	testAuth := dbcontext.Auth{
-		Username: "postgres",
-		Passowrd: "root",
-		DbName:   "db_quizy",
-	}
-	var err error
-	app.DB, err = testAuth.Connection()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	//app.DB.DropTableIfExists(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
-	//app.DB.Debug().CreateTable(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
 	app.setRoutes()
 	app.setMiddlewere()
 	fmt.Println("strat server at" + app.Port)
@@ -80,5 +56,11 @@ func (app *App) handelRequest(handler func(w http.ResponseWriter, r *http.Reques
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler(w, r, app.DB)
+	}
+}
+
+func (app *App) handelRequestUpload(handler func(w http.ResponseWriter, r *http.Request, db *sql.DB, path dbcontext.Assets)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r, app.DB, app.Assets)
 	}
 }

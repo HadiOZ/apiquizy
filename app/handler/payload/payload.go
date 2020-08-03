@@ -3,13 +3,14 @@ package payload
 import (
 	"apiquizyfull/app/model"
 	"encoding/base64"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type PayloadQuiz struct {
+	QuizID    string            `json:"id" bson:"id"`
+	Picture   string            `json:"picture" bson:"picture"`
 	Author    string            `json:"author" bson:"author"`
 	Title     string            `json:"title" bson:"title"`
 	Desc      string            `json:"description" bson:"description"`
@@ -32,7 +33,6 @@ func (p *PayloadQuiz) GetID() string {
 	UserID = append(UserID, nano)
 
 	ID := strings.Join(UserID, "-")
-	fmt.Println(ID)
 	encode := base64.StdEncoding.EncodeToString([]byte(ID))
 	return encode
 }
@@ -60,7 +60,28 @@ func (p *PayloadQuiz) Convert() model.Quiz {
 	return result
 }
 
+func QuizToPayload(quiz model.Quiz) PayloadQuiz {
+	var questions []PayloadQuestion
+	for _, item := range quiz.Questions {
+		quest := questToPayload(item)
+		questions = append(questions, quest)
+	}
+	return PayloadQuiz{
+		QuizID:    quiz.QuizID,
+		Picture:   quiz.Picture.String,
+		Author:    quiz.UserRefer,
+		Title:     quiz.Title,
+		Desc:      quiz.Desc.String,
+		Category:  quiz.Category.String,
+		Duration:  quiz.Duration,
+		Privacy:   quiz.Privacy,
+		Questions: questions,
+	}
+}
+
 type PayloadQuestion struct {
+	QuestID  string          `json:"id" bson:"id"`
+	Media    string          `json:"media" bson:"media"`
 	Question string          `json:"question" bson:"question"`
 	Answer   string          `json:"answer" bson:"answer"`
 	Options  []PayloadOption `json:"options" bson:"options"`
@@ -76,8 +97,26 @@ func (p *PayloadQuestion) Convert(quizid string, questid string) model.Quest {
 	}
 
 	return model.Quest{
-		Question: p.Question,
-		Answer:   p.Answer,
+		QuizRefer: quizid,
+		QuestID:   questid,
+		Question:  p.Question,
+		Answer:    p.Answer,
+		Options:   options,
+	}
+}
+
+func questToPayload(quest model.Quest) PayloadQuestion {
+	var options []PayloadOption
+	for _, item := range quest.Options {
+		option := optionToPayload(item)
+		options = append(options, option)
+	}
+
+	return PayloadQuestion{
+		QuestID:  quest.QuestID,
+		Media:    quest.Media.String,
+		Question: quest.Question,
+		Answer:   quest.Answer,
 		Options:  options,
 	}
 }
@@ -85,6 +124,13 @@ func (p *PayloadQuestion) Convert(quizid string, questid string) model.Quest {
 type PayloadOption struct {
 	Symbol  string `json:"symbol" bson:"symbol"`
 	Comment string `json:"comment" bson:"comment"`
+}
+
+func optionToPayload(option model.Option) PayloadOption {
+	return PayloadOption{
+		Symbol:  option.Symbol,
+		Comment: option.Comment,
+	}
 }
 
 func (p *PayloadOption) Convert() model.Option {
@@ -95,8 +141,8 @@ func (p *PayloadOption) Convert() model.Option {
 }
 
 type PayloadSignIn struct {
-	Email    string
-	Password string
+	Email    string `json:"email" bson:"email"`
+	Password string `json:"password" bson:"password"`
 }
 
 func (p *PayloadSignIn) Convert() model.User {
@@ -107,10 +153,10 @@ func (p *PayloadSignIn) Convert() model.User {
 }
 
 type PayloadSignUp struct {
-	Name      string
-	BirthDate string
-	Email     string
-	Password  string
+	Name      string `json:"name" bson:"name"`
+	BirthDate string `json:"birthdate" bson:"birthdate"`
+	Email     string `json:"email" bson:"email"`
+	Password  string `json:"password" bson:"password"`
 }
 
 func (p *PayloadSignUp) GetID() string {
@@ -125,9 +171,7 @@ func (p *PayloadSignUp) GetID() string {
 	UserID = append(UserID, month[0:3])
 	UserID = append(UserID, second)
 	UserID = append(UserID, nano)
-
 	ID := strings.Join(UserID, "Q")
-	fmt.Println(ID)
 	encode := base64.StdEncoding.EncodeToString([]byte(ID))
 	return encode
 }

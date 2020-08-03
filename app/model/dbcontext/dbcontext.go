@@ -8,6 +8,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type Assets struct {
+	Profile  string
+	Quiz     string
+	Question string
+}
+
 type Auth struct {
 	Username string
 	Passowrd string

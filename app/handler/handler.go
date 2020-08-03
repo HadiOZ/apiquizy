@@ -3,6 +3,7 @@ package handler
 import (
 	"apiquizyfull/app/handler/payload"
 	"apiquizyfull/app/model"
+	"apiquizyfull/app/model/dbcontext"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -35,11 +36,8 @@ func SignUpFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	if err := decoder.Decode(&payload); err != nil {
 		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
+		return
 	}
-
-	s := payload.GetID()
-	fmt.Println(s)
-
 	user := payload.Convert()
 	if _, err := user.CreateUser(db); err != nil {
 		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
@@ -78,11 +76,12 @@ func SignInFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 //UploadProfilePictureFunc checked
-func UploadProfilePictureFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func UploadProfilePictureFunc(w http.ResponseWriter, r *http.Request, db *sql.DB, root dbcontext.Assets) {
 	if r.Method != "POST" {
 		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
 		return
 	}
+	UserID := r.URL.Query().Get("id")
 	reader, err := r.MultipartReader()
 	var errid error
 	//dir, _ := os.Getwd()
@@ -105,7 +104,7 @@ func UploadProfilePictureFunc(w http.ResponseWriter, r *http.Request, db *sql.DB
 
 		ext := filepath.Ext(path.FileName())
 		payload := payload.PayloadUpload{
-			ID:       path.FormName(),
+			ID:       UserID,
 			Filename: strings.Join([]string{encrype, ext}, ""),
 		}
 		item := payload.ConvertToProfile()
@@ -114,8 +113,7 @@ func UploadProfilePictureFunc(w http.ResponseWriter, r *http.Request, db *sql.DB
 			break
 		}
 
-		filelocation := filepath.Join("/home/hadiese/Documents/quizymedia/profile-picture", payload.Filename)
-		log.Println(filelocation)
+		filelocation := filepath.Join(root.Profile, payload.Filename)
 		file, err := os.OpenFile(filelocation, os.O_WRONLY|os.O_CREATE, 0666)
 		defer file.Close()
 
@@ -145,8 +143,7 @@ func EditUserFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	UserID := r.URL.Query().Get("userid")
-	log.Println(UserID)
+	UserID := r.URL.Query().Get("id")
 	decoder := json.NewDecoder(r.Body)
 	var payload payload.PayloadProfile
 
@@ -156,7 +153,6 @@ func EditUserFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	profile := payload.Convert()
 	profile.UserID = UserID
-	log.Println(profile)
 	if _, err := profile.EditProfile(db); err != nil {
 		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
 		log.Println(err)
@@ -171,7 +167,7 @@ func SelectUserProfileFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method GET")
 		return
 	}
-	idUser := r.URL.Query().Get("iduser")
+	idUser := r.URL.Query().Get("id")
 	profile, err := model.SelectUserProfile(idUser, db)
 
 	payload := payload.PayloadProfile{
@@ -201,22 +197,6 @@ func CreateQuizFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	decoder := json.NewDecoder(r.Body)
 
-	// var ap payload.PayloadQuiz
-	// ap.Author = "hadi"
-	// ap.Category = "infotec"
-	// ap.Desc = "salah"
-	// ap.Duration = 86
-	// var quests []payload.PayloadQuestion
-	// var quest payload.PayloadQuestion
-	// quest.Answer = "kita kula"
-	// var options []payload.PayloadOption
-	// var opsi payload.PayloadOption
-	// opsi.Comment = "adab"
-	// options = append(options, opsi)
-	// quest.Options = options
-	// quests = append(quests, quest)
-	// ap.Questions = quests
-
 	var payload payload.PayloadQuiz
 	if err := decoder.Decode(&payload); err != nil {
 		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
@@ -233,194 +213,280 @@ func CreateQuizFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	resposeJSON(w, http.StatusOK, "data was seved")
 }
 
-// func EditQuizFunc(w http.ResponseWriter, r *http.Request, db *gorm.DB) {
-// 	if r.Method != "POST" {
-// 		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
-// 		return
-// 	}
-// 	decoder := json.NewDecoder(r.Body)
-// 	var payload payload.PayloadQuiz
+func EditQuizFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
-// 	if err := decoder.Decode(&payload); err != nil {
-// 		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
-// 		return
-// 	}
-// 	quiz := payload.Convert()
-// 	if affect, err := quiz.EditQuiz(db); err != nil || affect <= 0 {
-// 		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
-// 		log.Println(err)
-// 		return
-// 	}
+	QuizID := r.URL.Query().Get("id")
+	if r.Method != "POST" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	var payload payload.PayloadQuiz
 
-// 	resposeJSON(w, http.StatusOK, "data seved")
-// }
+	if err := decoder.Decode(&payload); err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
+		return
+	}
+	quiz := payload.Convert()
+	quiz.QuizID = QuizID
+	if affect, err := quiz.EditQuiz(db); err != nil || affect <= 0 {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		log.Println(err)
+		return
+	}
 
-// func EditQuestionFunc(w http.ResponseWriter, r *http.Request, db *gorm.DB) {
-// 	if r.Method != "POST" {
-// 		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
-// 		return
-// 	}
-// 	decoder := json.NewDecoder(r.Body)
-// 	payload := struct {
-// 		idQuiz   string
-// 		question payload.PayloadQuestion
-// 	}{}
+	resposeJSON(w, http.StatusOK, "data seved")
+}
 
-// 	if err := decoder.Decode(&payload); err != nil {
-// 		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
-// 		return
-// 	}
-// 	question := payload.question.Convert()
-// 	if affect, err := question.EditQuestion(payload.idQuiz, db); err != nil || affect <= 0 {
-// 		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
-// 		log.Println(err)
-// 		return
-// 	}
+func EditQuestionFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != "POST" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
+	QuizID := r.URL.Query().Get("quizid")
+	QuestID := r.URL.Query().Get("id")
+	decoder := json.NewDecoder(r.Body)
+	var payload payload.PayloadQuestion
 
-// 	resposeJSON(w, http.StatusOK, "data seved")
-// }
+	if err := decoder.Decode(&payload); err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
+		return
+	}
+	question := payload.Convert(QuizID, QuestID)
+	log.Println(question)
+	if affect, err := question.EditQuestion(db); affect <= 0 {
+		resposeErrorJSON(w, http.StatusInternalServerError, "Data not change please check again your data that will be change")
+		log.Println(err)
+		return
+	}
 
-// func UploadQuizPictureFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-// 	if r.Method != "POST" {
-// 		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
-// 		return
-// 	}
-// 	reader, err := r.MultipartReader()
-// 	var errid error
-// 	dir, _ := os.Getwd()
+	resposeJSON(w, http.StatusOK, "data seved")
+}
 
-// 	if err != nil {
-// 		resposeErrorJSON(w, http.StatusInternalServerError, "internal server error")
-// 		return
-// 	}
+func UploadQuizPictureFunc(w http.ResponseWriter, r *http.Request, db *sql.DB, root dbcontext.Assets) {
+	if r.Method != "POST" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
 
-// 	for {
-// 		path, err := reader.NextPart()
-// 		if err == io.EOF {
-// 			break
-// 		}
+	QuizID := r.URL.Query().Get("id")
+	reader, err := r.MultipartReader()
+	var errid error
+	//dir, _ := os.Getwd()
 
-// 		timer := time.Now()
-// 		bit, _ := timer.MarshalText()
-// 		filename := strings.Join([]string{path.FormName(), string(bit)}, "%")
-// 		encrype := base64.StdEncoding.EncodeToString([]byte(filename))
+	if err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
 
-// 		ext := filepath.Ext(path.FileName())
-// 		payload := payload.PayloadUpload{
-// 			ID:       path.FormName(),
-// 			Filename: strings.Join([]string{encrype, ext}, ""),
-// 		}
-// 		item := payload.ConvertToQuiz()
-// 		if affect, _ := item.UploadPicture(db); affect <= 0 {
-// 			errid = errors.New("IDQuiz " + path.FormName() + " not found")
-// 			break
-// 		}
+	for {
+		path, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
 
-// 		filelocation := filepath.Join(dir, payload.Filename)
-// 		file, err := os.OpenFile(filelocation, os.O_WRONLY|os.O_CREATE, 0666)
-// 		defer file.Close()
+		timer := time.Now()
+		bit, _ := timer.MarshalText()
+		filename := strings.Join([]string{QuizID, string(bit)}, "%")
+		encrype := base64.StdEncoding.EncodeToString([]byte(filename))
 
-// 		if err != nil {
-// 			log.Panic(err)
-// 			return
+		ext := filepath.Ext(path.FileName())
+		payload := payload.PayloadUpload{
+			ID:       QuizID,
+			Filename: strings.Join([]string{encrype, ext}, ""),
+		}
+		item := payload.ConvertToQuiz()
+		if affect, _ := item.UploadPicture(db); affect <= 0 {
+			errid = errors.New("IDQuiz " + path.FormName() + " not found")
+			break
+		}
 
-// 		}
+		filelocation := filepath.Join(root.Quiz, payload.Filename)
+		file, err := os.OpenFile(filelocation, os.O_WRONLY|os.O_CREATE, 0666)
+		defer file.Close()
 
-// 		if _, err := io.Copy(file, path); err != nil {
-// 			resposeErrorJSON(w, http.StatusInternalServerError, "can't save file")
-// 			return
-// 		}
-// 	}
+		if err != nil {
+			log.Panic(err)
+			return
 
-// 	if errid != nil {
-// 		resposeErrorJSON(w, http.StatusBadRequest, errid.Error())
-// 		return
-// 	}
+		}
 
-// 	resposeJSON(w, http.StatusOK, "data seved")
-// }
+		if _, err := io.Copy(file, path); err != nil {
+			resposeErrorJSON(w, http.StatusInternalServerError, "can't save file")
+			return
+		}
+	}
 
-// func UploadQuestionMediaFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-// 	if r.Method != "POST" {
-// 		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
-// 		return
-// 	}
-// 	reader, err := r.MultipartReader()
-// 	var errid error
-// 	dir, _ := os.Getwd()
+	if errid != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, errid.Error())
+		return
+	}
 
-// 	if err != nil {
-// 		resposeErrorJSON(w, http.StatusInternalServerError, "internal server error")
-// 		return
-// 	}
+	resposeJSON(w, http.StatusOK, "data seved")
+}
 
-// 	for {
-// 		path, err := reader.NextPart()
-// 		if err == io.EOF {
-// 			break
-// 		}
+func UploadQuestionMediaFunc(w http.ResponseWriter, r *http.Request, db *sql.DB, root dbcontext.Assets) {
+	if r.Method != "POST" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
 
-// 		timer := time.Now()
-// 		bit, _ := timer.MarshalText()
-// 		id := strings.Split(path.FormName(), "-")
-// 		idQuiz := id[0]
-// 		idQuestion := id[1]
-// 		filename := strings.Join([]string{idQuestion, string(bit)}, "%")
-// 		encrype := base64.StdEncoding.EncodeToString([]byte(filename))
+	QuizID := r.URL.Query().Get("quizid")
 
-// 		ext := filepath.Ext(path.FileName())
-// 		payload := payload.PayloadUpload{
-// 			ID:       idQuestion,
-// 			Filename: strings.Join([]string{encrype, ext}, ""),
-// 		}
-// 		item := payload.ConvertToQuestion()
-// 		if affect, _ := item.UploadMedia(idQuiz, db); affect <= 0 {
-// 			errid = errors.New("IDQuiz " + path.FormName() + " not found")
-// 			break
-// 		}
+	reader, err := r.MultipartReader()
+	var missing []string
+	//dir, _ := os.Getwd()
 
-// 		filelocation := filepath.Join(dir, payload.Filename)
-// 		file, err := os.OpenFile(filelocation, os.O_WRONLY|os.O_CREATE, 0666)
-// 		defer file.Close()
+	if err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
 
-// 		if err != nil {
-// 			log.Panic(err)
-// 			return
+	for {
+		path, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
 
-// 		}
+		timer := time.Now()
+		bit, _ := timer.MarshalText()
 
-// 		if _, err := io.Copy(file, path); err != nil {
-// 			resposeErrorJSON(w, http.StatusInternalServerError, "can't save file")
-// 			return
-// 		}
-// 	}
+		filename := strings.Join([]string{QuizID, path.FormName(), string(bit)}, "%")
+		encrype := base64.StdEncoding.EncodeToString([]byte(filename))
 
-// 	if errid != nil {
-// 		resposeErrorJSON(w, http.StatusBadRequest, errid.Error())
-// 		return
-// 	}
+		ext := filepath.Ext(path.FileName())
+		payload := payload.PayloadUpload{
+			ID:       path.FormName(),
+			Filename: strings.Join([]string{encrype, ext}, ""),
+		}
+		item := payload.ConvertToQuestion()
+		item.QuizRefer = QuizID
+		if affect, _ := item.UploadMedia(db); affect <= 0 {
+			missing = append(missing, path.FormName())
+			continue
+		}
 
-// 	resposeJSON(w, http.StatusOK, "data seved")
-// }
+		filelocation := filepath.Join(root.Question, payload.Filename)
+		file, err := os.OpenFile(filelocation, os.O_WRONLY|os.O_CREATE, 0666)
+		defer file.Close()
 
-// func SelectQuizByAuthorFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-// 	author := r.URL.Query().Get("author")
-// 	quizs, err := model.SelectQuizByAuthor(author, db)
-// 	if err != nil {
-// 		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
-// 	resposeJSON(w, http.StatusOK, quizs)
+		if err != nil {
+			log.Panic(err)
+			return
 
-// }
+		}
 
-// func SelectQuizByIDFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-// 	id := r.URL.Query().Get("id")
-// 	quiz, err := model.SelectQuizByID(id, db)
-// 	if err != nil {
-// 		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
-// 	resposeJSON(w, http.StatusOK, quiz)
+		if _, err := io.Copy(file, path); err != nil {
+			resposeErrorJSON(w, http.StatusInternalServerError, "can't save file")
+			return
+		}
+	}
 
-// }
+	if missing != nil {
+		message := fmt.Sprint("ID ", missing, " not Found")
+		resposeErrorJSON(w, http.StatusBadRequest, message)
+		return
+	}
+
+	resposeJSON(w, http.StatusOK, "data seved")
+}
+
+func SelectQuizDetailFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != "GET" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method GET")
+		return
+	}
+	author := r.URL.Query().Get("author")
+	quizID := r.URL.Query().Get("id")
+	quizs, err := model.SelectQuizDetail(quizID, author, db)
+	if err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	var pld []payload.PayloadQuiz
+	for _, item := range quizs {
+		q := payload.QuizToPayload(item)
+		pld = append(pld, q)
+	}
+	resposeJSON(w, http.StatusOK, pld)
+
+}
+
+func SelectQuizFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != "GET" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method GET")
+		return
+	}
+	id := r.URL.Query().Get("id")
+	author := r.URL.Query().Get("author")
+	quizs, err := model.SelectQuiz(id, author, db)
+	if err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	var pld []payload.PayloadQuiz
+	for _, item := range quizs {
+		q := payload.QuizToPayload(item)
+		pld = append(pld, q)
+	}
+
+	resposeJSON(w, http.StatusOK, pld)
+
+}
+
+func DeleteQuestion(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != "DELETE" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method DELETE")
+		return
+	}
+	QuestID := r.URL.Query().Get("id")
+	QuizID := r.URL.Query().Get("quizid")
+	affect, err := model.DeleteQuestion(QuizID, QuestID, db)
+	if affect <= 0 || err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Question ID or Quiz ID not Found")
+		return
+	}
+
+	resposeJSON(w, http.StatusOK, "Data deleted")
+}
+
+func DeleteQuiz(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != "DELETE" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method DELETE")
+		return
+	}
+	QuizID := r.URL.Query().Get("id")
+	affect, err := model.DeleteQuiz(QuizID, db)
+	log.Println(affect, err)
+	if affect <= 0 || err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Quiz ID not Found")
+		return
+	}
+
+	resposeJSON(w, http.StatusOK, "Data deleted")
+}
+
+func AddQuestion(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != "POST" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	QuizID := r.URL.Query().Get("quizid")
+	QuestID := r.URL.Query().Get("id")
+	var payload payload.PayloadQuestion
+	log.Println(QuestID, QuizID)
+
+	if err := decoder.Decode(&payload); err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
+		return
+	}
+
+	question := payload.Convert(QuizID, QuestID)
+	log.Println(question)
+	if _, err := question.AddQuestion(db); err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resposeJSON(w, http.StatusOK, "Data Recorded")
+}
