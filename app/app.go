@@ -24,7 +24,9 @@ func (app *App) setMiddlewere() {
 }
 
 func (app *App) setRoutes() {
-	// 	app.Router.HandleFunc("/", app.handelRequest(handler.TestAPI))
+	app.Router.PathPrefix("/profile/").Handler(http.StripPrefix("/profile/", http.FileServer(http.Dir(app.Assets.Profile))))
+	app.Router.PathPrefix("/questmedia/").Handler(http.StripPrefix("/questmedia/", http.FileServer(http.Dir(app.Assets.Question))))
+	app.Router.PathPrefix("/quizpicture/").Handler(http.StripPrefix("/quizpicture/", http.FileServer(http.Dir(app.Assets.Quiz))))
 	app.Router.HandleFunc("/signup", app.handelRequest(handler.SignUpFunc))
 	app.Router.HandleFunc("/signin", app.handelRequest(handler.SignInFunc))
 	app.Router.HandleFunc("/uploadpp", app.handelRequestUpload(handler.UploadProfilePictureFunc))
@@ -43,7 +45,8 @@ func (app *App) setRoutes() {
 }
 
 func (app *App) Run() {
-	app.Router = mux.NewRouter()
+	app.Router = mux.NewRouter().StrictSlash(true)
+	log.Println(app.Assets.Profile)
 	app.setRoutes()
 	app.setMiddlewere()
 	fmt.Println("strat server at" + app.Port)
