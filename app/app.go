@@ -3,6 +3,7 @@ package app
 import (
 	"apiquizyfull/app/handler"
 	"apiquizyfull/app/middleware"
+	"apiquizyfull/app/model"
 	"apiquizyfull/app/model/dbcontext"
 	"database/sql"
 	"fmt"
@@ -13,14 +14,27 @@ import (
 )
 
 type App struct {
-	DB     *sql.DB
-	Router *mux.Router
-	Assets dbcontext.Assets
-	Port   string
+	DB        *sql.DB
+	Router    *mux.Router
+	Assets    dbcontext.Assets
+	Port      string
+	DBContext dbcontext.Auth
 }
 
 func (app *App) setMiddlewere() {
 	app.Router.Use(middleware.Loging)
+}
+
+func (app *App) CreateDataBase(value bool) {
+	if value == true {
+		db, err := app.DBContext.ConnectionGorm()
+		defer db.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		db.DropTableIfExists(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
+		db.Debug().CreateTable(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
+	}
 }
 
 func (app *App) setRoutes() {
@@ -45,8 +59,12 @@ func (app *App) setRoutes() {
 }
 
 func (app *App) Run() {
+	var err error
 	app.Router = mux.NewRouter().StrictSlash(true)
-	log.Println(app.Assets.Profile)
+	app.DB, err = app.DBContext.Connection()
+	if err != nil {
+		log.Panic(err)
+	}
 	app.setRoutes()
 	app.setMiddlewere()
 	fmt.Println("strat server at" + app.Port)
