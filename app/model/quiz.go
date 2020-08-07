@@ -19,7 +19,7 @@ type Quiz struct {
 }
 
 type Quest struct {
-	QuestID   string         `json:"questID" gorm:"unique;not null"`
+	QuestID   string         `json:"questID" gorm:"not null"`
 	QuizRefer string         `json:"quizref" gorm:"not null"`
 	Question  string         `json:"question" gorm:"not null"`
 	Media     sql.NullString `json:"media" gorm:"unique"`

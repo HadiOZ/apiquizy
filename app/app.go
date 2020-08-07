@@ -22,6 +22,7 @@ type App struct {
 }
 
 func (app *App) setMiddlewere() {
+	app.Router.Use(middleware.CORSOrigin)
 	app.Router.Use(middleware.Loging)
 }
 
