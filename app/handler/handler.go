@@ -18,9 +18,9 @@ import (
 	"time"
 )
 
-// func TestAPI(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-// 	resposeJSON(w, http.StatusOK, "halo dari server")
-// }
+func TestAPI(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	resposeJSON(w, http.StatusOK, "halo dari server")
+}
 
 //SignUpFunc checked
 func SignUpFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {

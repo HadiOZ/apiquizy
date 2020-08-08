@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,11 +29,9 @@ func Loging(next http.Handler) http.Handler {
 }
 
 func CORSOrigin(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-
-		next.ServeHTTP(w, r)
-	})
+	return cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "DELETE"},
+		AllowedHeaders: []string{"*"},
+	}).Handler(next)
 }

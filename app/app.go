@@ -39,6 +39,7 @@ func (app *App) CreateDataBase(value bool) {
 }
 
 func (app *App) setRoutes() {
+	app.Router.HandleFunc("/", app.handelRequest(handler.TestAPI))
 	app.Router.PathPrefix("/profile/").Handler(http.StripPrefix("/profile/", http.FileServer(http.Dir(app.Assets.Profile))))
 	app.Router.PathPrefix("/questmedia/").Handler(http.StripPrefix("/questmedia/", http.FileServer(http.Dir(app.Assets.Question))))
 	app.Router.PathPrefix("/quizpicture/").Handler(http.StripPrefix("/quizpicture/", http.FileServer(http.Dir(app.Assets.Quiz))))
@@ -83,6 +84,9 @@ func (app *App) handelRequest(handler func(w http.ResponseWriter, r *http.Reques
 
 func (app *App) handelRequestUpload(handler func(w http.ResponseWriter, r *http.Request, db *sql.DB, path dbcontext.Assets)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// w.Header().Set("Access-Control-Allow-Origin", "*")
+		// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE")
+		// w.Header().Set("Access-Control-Allow-Headers", "*")
 		handler(w, r, app.DB, app.Assets)
 	}
 }
