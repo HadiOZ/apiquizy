@@ -58,6 +58,8 @@ func (app *App) setRoutes() {
 	app.Router.HandleFunc("/user", app.handelRequest(handler.SelectUserProfileFunc))
 	app.Router.HandleFunc("/quizdetail", app.handelRequest(handler.SelectQuizDetailFunc))
 	app.Router.HandleFunc("/quiz", app.handelRequest(handler.SelectQuizFunc))
+	app.Router.HandleFunc("/search", app.handelRequest(handler.SearchQuiz))
+
 }
 
 func (app *App) Run() {

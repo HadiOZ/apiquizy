@@ -300,7 +300,7 @@ func SelectOptions(idQuiz string, idQuest string, db *sql.DB) ([]Option, error) 
 
 //make options update
 func (o *Option) UpdateOption(db *sql.DB) (int64, error) {
-	query := fmt.Sprintf(`UPDATE public.options SET symbol= '%s', comment= '%s' WHERE quiz_refer= '%s' AND quest_refer= '%s'`, o.Symbol, o.Comment, o.QuizRefer, o.QuestRefer)
+	query := fmt.Sprintf(`UPDATE public.options SET comment= '%s' WHERE quiz_refer= '%s' AND quest_refer= '%s' AND symbol= '%s'`, o.Comment, o.QuizRefer, o.QuestRefer, o.Symbol)
 	res, err := db.Exec(query)
 	if err != nil {
 		return 0, err
@@ -323,4 +323,23 @@ func DeleteOption(quizid string, questid string, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 	return affect, nil
+}
+
+func SelectQuizByTitle(title string, db *sql.DB) ([]Quiz, error) {
+	query := fmt.Sprint(`SELECT quiz_id, user_refer, title, "desc", category, duration, privacy, picture FROM public.quizzes where title like '%` + title + `%' AND privacy = 'PUB'`)
+	log.Println(query)
+	row, err := db.Query(query)
+	if err != nil {
+		return []Quiz{}, err
+	}
+	var result []Quiz
+	for row.Next() {
+		var item Quiz
+		if err := row.Scan(&item.QuizID, &item.UserRefer, &item.Title, &item.Desc, &item.Category, &item.Duration, &item.Privacy, &item.Picture); err != nil {
+			return []Quiz{}, err
+		}
+		result = append(result, item)
+
+	}
+	return result, nil
 }

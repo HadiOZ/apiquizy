@@ -210,7 +210,7 @@ func CreateQuizFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	resposeJSON(w, http.StatusOK, "data was seved")
+	resposeJSON(w, http.StatusOK, quiz.QuizID)
 }
 
 func EditQuizFunc(w http.ResponseWriter, r *http.Request, db *sql.DB) {
@@ -489,4 +489,26 @@ func AddQuestion(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 	resposeJSON(w, http.StatusOK, "Data Recorded")
+}
+
+func SearchQuiz(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != http.MethodGet {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method GET")
+		return
+	}
+
+	title := r.URL.Query().Get("title")
+
+	quizzes, err := model.SelectQuizByTitle(title, db)
+	if err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	var plds []payload.PayloadQuiz
+	for _, item := range quizzes {
+		pld := payload.QuizToPayload(item)
+		plds = append(plds, pld)
+	}
+
+	resposeJSON(w, http.StatusOK, plds)
 }
