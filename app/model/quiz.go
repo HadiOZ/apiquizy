@@ -246,7 +246,7 @@ func SelectQuiz(idquiz string, idAuthor string, db *sql.DB) ([]Quiz, error) {
 
 //function checked
 func SelectQuestions(idQuiz string, db *sql.DB) ([]Quest, error) {
-	query := fmt.Sprintf(`SELECT quest_id, question, media, answer FROM public.quests WHERE quiz_refer = '%s'`, idQuiz)
+	query := fmt.Sprintf(`SELECT quest_id, question, media, answer FROM public.quests WHERE quiz_refer = '%s' ORDER BY quest_id ASC`, idQuiz)
 	row, err := db.Query(query)
 	if err != nil {
 		return []Quest{}, err
@@ -282,7 +282,7 @@ func (o *Option) AddOption(db *sql.DB) (int64, error) {
 
 //fumction checked
 func SelectOptions(idQuiz string, idQuest string, db *sql.DB) ([]Option, error) {
-	query := fmt.Sprintf(`SELECT symbol, comment FROM public.options WHERE quiz_refer = '%s' AND quest_refer = '%s'`, idQuiz, idQuest)
+	query := fmt.Sprintf(`SELECT symbol, comment FROM public.options WHERE quiz_refer = '%s' AND quest_refer = '%s' ORDER BY symbol ASC`, idQuiz, idQuest)
 	row, err := db.Query(query)
 	if err != nil {
 		return []Option{}, err
