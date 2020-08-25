@@ -33,8 +33,11 @@ func (app *App) CreateDataBase(value bool) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		db.DropTableIfExists(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
-		db.Debug().CreateTable(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
+		//db.DropTableIfExists(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
+		//db.Debug().CreateTable(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
+		db.DropTableIfExists(&model.Player{}, &model.History{}, &model.Archievement{})
+		db.Debug().CreateTable(&model.Player{}, &model.History{}, &model.Archievement{})
+
 	}
 }
 
@@ -59,6 +62,8 @@ func (app *App) setRoutes() {
 	app.Router.HandleFunc("/quizdetail", app.handelRequest(handler.SelectQuizDetailFunc))
 	app.Router.HandleFunc("/quiz", app.handelRequest(handler.SelectQuizFunc))
 	app.Router.HandleFunc("/search", app.handelRequest(handler.SearchQuiz))
+	app.Router.HandleFunc("/createhistory", app.handelRequest(handler.InsertHistory))
+	app.Router.HandleFunc("/history", app.handelRequest(handler.SelectHistoryByQuizID))
 
 }
 

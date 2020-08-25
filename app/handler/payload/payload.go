@@ -236,3 +236,91 @@ func (p *PayloadUpload) ConvertToQuestion() model.Quest {
 	result.QuestID = p.ID
 	return result
 }
+
+type PayloadHistory struct {
+	HistoryID string          `json:"historyID" bson:"historyID"`
+	Date      string          `json:"date" bson:"date"`
+	QuizRefer string          `json:"quizrefer" bson:"quizrefer"`
+	Players   []PayloadPlayer `json:"players" bson:"players"`
+}
+
+func (p *PayloadHistory) GetID() string {
+	now := time.Now()
+	year := strconv.Itoa(now.Year())
+	month := strings.ToUpper(now.Month().String())
+	nano := strconv.Itoa(now.Nanosecond())
+
+	var UserID []string
+	UserID = append(UserID, "HIZ")
+	UserID = append(UserID, year)
+	UserID = append(UserID, month[0:3])
+	UserID = append(UserID, nano)
+
+	ID := strings.Join(UserID, "")
+	encode := base64.StdEncoding.EncodeToString([]byte(ID))
+	return encode
+}
+
+func (p *PayloadHistory) Convert() model.History {
+	var players []model.Player
+	ID := p.GetID()
+	for _, item := range p.Players {
+		player := item.Convert(ID)
+		players = append(players, player)
+	}
+
+	t := time.Now()
+	var dates []string
+	dates = append(dates, strconv.Itoa(t.Day()))
+	dates = append(dates, t.Month().String())
+	dates = append(dates, strconv.Itoa(t.Year()))
+	date := strings.Join(dates, "-")
+
+	result := model.History{
+		HistoryID: ID,
+		Date:      date,
+		QuizRefer: p.QuizRefer,
+		Players:   players,
+	}
+	return result
+}
+
+type PayloadPlayer struct {
+	UserRefer string `json:"userref" bson:"userref"`
+	Nickname  string `json:"nickname" bson:"nickname"`
+	Score     uint   `json:"score" bson:"score"`
+	Point     uint   `json:"point" bson:"point"`
+}
+
+func (p *PayloadPlayer) Convert(idhistory string) model.Player {
+	return model.Player{
+		UserRefer:    p.UserRefer,
+		Guest:        p.Nickname,
+		HistoryRefer: idhistory,
+		Score:        p.Score,
+		Point:        p.Point,
+	}
+}
+
+func ConvertToPayloadHistory(history model.History) PayloadHistory {
+	var players []PayloadPlayer
+	for _, item := range history.Players {
+		player := ConvertToPayloadPlayer(item)
+		players = append(players, player)
+	}
+	return PayloadHistory{
+		HistoryID: history.HistoryID,
+		Date:      history.Date,
+		QuizRefer: history.QuizRefer,
+		Players:   players,
+	}
+}
+
+func ConvertToPayloadPlayer(player model.Player) PayloadPlayer {
+	return PayloadPlayer{
+		UserRefer: player.UserRefer,
+		Nickname:  player.Guest,
+		Score:     player.Score,
+		Point:     player.Point,
+	}
+}

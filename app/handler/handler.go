@@ -512,3 +512,43 @@ func SearchQuiz(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	resposeJSON(w, http.StatusOK, plds)
 }
+
+func InsertHistory(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != http.MethodPost {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	var payload payload.PayloadHistory
+
+	if err := decoder.Decode(&payload); err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
+		return
+	}
+	history := payload.Convert()
+	if _, err := history.InsertHistory(db); err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resposeJSON(w, http.StatusOK, "Data Recorded")
+}
+
+func SelectHistoryByQuizID(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	if r.Method != http.MethodGet {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method GET")
+		return
+	}
+
+	quizID := r.URL.Query().Get("quizid")
+	var pld []payload.PayloadHistory
+	historys, err := model.SelectHistoryByQuizID(quizID, db)
+	if err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	for _, item := range historys {
+		p := payload.ConvertToPayloadHistory(item)
+		pld = append(pld, p)
+	}
+	resposeJSON(w, http.StatusOK, pld)
+}
