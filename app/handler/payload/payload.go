@@ -324,3 +324,40 @@ func ConvertToPayloadPlayer(player model.Player) PayloadPlayer {
 		Point:     player.Point,
 	}
 }
+
+type PayloadSignUpWithGoogle struct {
+	ID    string `json:"ID" bson:"ID"`
+	Name  string `json:"name" bson:"name"`
+	Email string `json:"email" bson:"email"`
+}
+
+func (p *PayloadSignUpWithGoogle) GetPassword() string {
+	time := time.Now()
+	year := strconv.Itoa(time.Year())
+	month := strings.ToUpper(time.Month().String())
+	second := strconv.Itoa(time.Second())
+	nano := strconv.Itoa(time.Nanosecond())
+
+	var password []string
+
+	password = append(password, year)
+	password = append(password, month)
+	password = append(password, second)
+	password = append(password, nano)
+
+	pass := strings.Join(password, "&")
+
+	encode := base64.StdEncoding.EncodeToString([]byte(pass))
+	return encode
+}
+
+func (p *PayloadSignUpWithGoogle) Convert() model.User {
+	result := model.User{
+		UserID:   p.ID,
+		Email:    p.Email,
+		Password: p.GetPassword(),
+		Name:     p.Name,
+	}
+	result.BirthDate.Valid = false
+	return result
+}

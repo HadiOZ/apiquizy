@@ -552,3 +552,28 @@ func SelectHistoryByQuizID(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	resposeJSON(w, http.StatusOK, pld)
 }
+
+func SignUpWithGoogle(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+
+	if r.Method != "POST" {
+		resposeErrorJSON(w, http.StatusBadRequest, "Just Allow Method POST")
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+
+	var payload payload.PayloadSignUpWithGoogle
+
+	if err := decoder.Decode(&payload); err != nil {
+		resposeErrorJSON(w, http.StatusBadRequest, "Data Structure wrong")
+		return
+	}
+
+	user := payload.Convert()
+	if _, err := user.CreateUser(db); err != nil {
+		resposeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resposeJSON(w, http.StatusOK, "Data Recorded")
+
+}

@@ -47,6 +47,7 @@ func (app *App) setRoutes() {
 	app.Router.PathPrefix("/questmedia/").Handler(http.StripPrefix("/questmedia/", http.FileServer(http.Dir(app.Assets.Question))))
 	app.Router.PathPrefix("/quizpicture/").Handler(http.StripPrefix("/quizpicture/", http.FileServer(http.Dir(app.Assets.Quiz))))
 	app.Router.HandleFunc("/signup", app.handelRequest(handler.SignUpFunc))
+	app.Router.HandleFunc("/signupwithgoogle", app.handelRequest(handler.SignUpWithGoogle))
 	app.Router.HandleFunc("/signin", app.handelRequest(handler.SignInFunc))
 	app.Router.HandleFunc("/uploadpp", app.handelRequestUpload(handler.UploadProfilePictureFunc))
 	app.Router.HandleFunc("/uploadqp", app.handelRequestUpload(handler.UploadQuizPictureFunc))
