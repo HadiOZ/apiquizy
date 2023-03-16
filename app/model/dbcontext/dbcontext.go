@@ -15,19 +15,21 @@ type Assets struct {
 }
 
 type Auth struct {
+	Host     string
+	Port     string
 	Username string
 	Passowrd string
 	DbName   string
 }
 
 func (auth *Auth) ConnectionGorm() (*gorm.DB, error) {
-	var dbInfo = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", auth.Username, auth.Passowrd, auth.DbName)
+	var dbInfo = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", auth.Host, auth.Port, auth.Username, auth.Passowrd, auth.DbName)
 	db, err := gorm.Open("postgres", dbInfo)
 	return db, err
 }
 
-func (i *Auth) Connection() (*sql.DB, error) {
-	var dbInfo = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", i.Username, i.Passowrd, i.DbName)
+func (auth *Auth) Connection() (*sql.DB, error) {
+	var dbInfo = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", auth.Host, auth.Port, auth.Username, auth.Passowrd, auth.DbName)
 	db, err := sql.Open("postgres", dbInfo)
 	return db, err
 }

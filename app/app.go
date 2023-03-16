@@ -26,18 +26,16 @@ func (app *App) setMiddlewere() {
 	app.Router.Use(middleware.Loging)
 }
 
-func (app *App) CreateDataBase(value bool) {
-	if value == true {
+func (app *App) CreateDataBase(value string) {
+	if value == "1" {
 		db, err := app.DBContext.ConnectionGorm()
-		defer db.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
-		//db.DropTableIfExists(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
-		//db.Debug().CreateTable(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
-		db.DropTableIfExists(&model.Player{}, &model.History{}, &model.Archievement{})
-		db.Debug().CreateTable(&model.Player{}, &model.History{}, &model.Archievement{})
+		defer db.Close()
 
+		db.DropTableIfExists(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
+		db.Debug().CreateTable(&model.User{}, &model.Quiz{}, &model.Quest{}, &model.Player{}, &model.Option{}, &model.History{}, &model.Archievement{})
 	}
 }
 
@@ -73,7 +71,7 @@ func (app *App) Run() {
 	app.Router = mux.NewRouter().StrictSlash(true)
 	app.DB, err = app.DBContext.Connection()
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 	app.setRoutes()
 	app.setMiddlewere()
@@ -92,9 +90,6 @@ func (app *App) handelRequest(handler func(w http.ResponseWriter, r *http.Reques
 
 func (app *App) handelRequestUpload(handler func(w http.ResponseWriter, r *http.Request, db *sql.DB, path dbcontext.Assets)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// w.Header().Set("Access-Control-Allow-Origin", "*")
-		// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE")
-		// w.Header().Set("Access-Control-Allow-Headers", "*")
 		handler(w, r, app.DB, app.Assets)
 	}
 }

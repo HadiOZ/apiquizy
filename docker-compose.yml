@@ -1,0 +1,74 @@
+version: '3.1'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: db
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: test
+      POSTGRES_DB: quizzipy
+    networks:
+      - bridge_quiz
+
+  api:
+    depends_on:
+      - db
+    image: ozmonday/apiquizzipy:latest 
+    restart: unless-stopped
+    container_name: api
+    environment:
+      INIT_DB: 1
+      PORT: 8000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: test
+      DB_PASSWORD: example
+      DB_NAME: quizzipy
+
+    ports:
+      - "8000:8000"
+    networks:
+      - bridge_quiz
+    
+  wsc:
+    image: ozmonday/webscquizzipy:latest 
+    restart: unless-stopped
+    container_name: wsc
+    environment:
+      PORT: 8083
+    ports:
+      - "8083:8083"
+    networks:
+      - bridge_quiz
+
+  quizzipy_play:
+    image: ozmonday/quizzipyplay:latest 
+    container_name: quizzipy_play
+    depends_on:
+      - db
+      - wsc
+    ports:
+      - "3000:80"
+    networks:
+      - bridge_quiz
+    
+      
+
+  quizzipy_main:
+    image: ozmonday/quizzipymain:latest 
+    container_name: quizzipy_main
+    depends_on:
+      - db
+      - wsc
+      - quizzipy_play
+   
+    ports:
+      - "80:80"
+    networks:
+      - bridge_quiz
+    
+  
+networks:
+  bridge_quiz:
+    name: bridge_quiz
